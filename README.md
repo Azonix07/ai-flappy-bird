@@ -460,7 +460,7 @@ The game includes a comprehensive analytics dashboard with multiple graphs:
 - Neural complexity increases as birds get smarter
 
 ## Try It Yourself
-1. Open `index.html` in your browser
+1. Open https://mehmetkahya0.github.io/ai-flappy-bird
 2. Watch the birds learn
 3. See the neural activity change
 4. Notice how scores improve over generations
