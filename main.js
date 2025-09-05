@@ -359,14 +359,17 @@ class Bird {
 
     show() {
         if (!ctx) return;
-        // Dynamic color based on performance
-        let intensity = Math.min(255, this.score / 10);
-        ctx.fillStyle = `rgb(255, ${255 - intensity}, 0)`;
-        ctx.fillRect(this.x - BIRD_SIZE/2, this.y - BIRD_SIZE/2, BIRD_SIZE, BIRD_SIZE);
         
-        // Add a small trail effect for the best bird
-        ctx.fillStyle = `rgba(255, ${255 - intensity}, 0, 0.3)`;
-        ctx.fillRect(this.x - BIRD_SIZE/2 - 2, this.y - BIRD_SIZE/2, BIRD_SIZE + 4, BIRD_SIZE);
+        // Simple yellow circle
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, BIRD_SIZE/2, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Optional: add a subtle outline
+        ctx.strokeStyle = '#FFA500';
+        ctx.lineWidth = 1;
+        ctx.stroke();
     }
 
     offscreen() {
