@@ -1,19 +1,43 @@
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const neural1 = document.getElementById('neural1');
-const ctx1 = neural1.getContext('2d');
-const neural2 = document.getElementById('neural2');
-const ctx2 = neural2.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
-// New graph canvases
+// Check if canvas is properly loaded
+if (!canvas) {
+    console.error('❌ gameCanvas element not found!');
+} else if (!ctx) {
+    console.error('❌ Failed to get 2D context from gameCanvas!');
+} else {
+    console.log('✅ Game canvas loaded successfully');
+}
+
+const neural1 = document.getElementById('neural1');
+const ctx1 = neural1 ? neural1.getContext('2d') : null;
+const neural2 = document.getElementById('neural2');
+const ctx2 = neural2 ? neural2.getContext('2d') : null;
+
+// New graph canvases with null checks
 const fitnessGraph = document.getElementById('fitnessGraph');
-const ctxFitness = fitnessGraph.getContext('2d');
+const ctxFitness = fitnessGraph ? fitnessGraph.getContext('2d') : null;
 const diversityGraph = document.getElementById('diversityGraph');
-const ctxDiversity = diversityGraph.getContext('2d');
+const ctxDiversity = diversityGraph ? diversityGraph.getContext('2d') : null;
 const activityHeatmap = document.getElementById('activityHeatmap');
-const ctxActivity = activityHeatmap.getContext('2d');
+const ctxActivity = activityHeatmap ? activityHeatmap.getContext('2d') : null;
 const genePoolGraph = document.getElementById('genePoolGraph');
-const ctxGenePool = genePoolGraph.getContext('2d');
+const ctxGenePool = genePoolGraph ? genePoolGraph.getContext('2d') : null;
+const learningRateGraph = document.getElementById('learningRateGraph');
+const ctxLearning = learningRateGraph ? learningRateGraph.getContext('2d') : null;
+const speciesGraph = document.getElementById('speciesGraph');
+const ctxSpecies = speciesGraph ? speciesGraph.getContext('2d') : null;
+const performanceHist = document.getElementById('performanceHist');
+const ctxPerformance = performanceHist ? performanceHist.getContext('2d') : null;
+const complexityGraph = document.getElementById('complexityGraph');
+const ctxComplexity = complexityGraph ? complexityGraph.getContext('2d') : null;
+const survivalGraph = document.getElementById('survivalGraph');
+const ctxSurvival = survivalGraph ? survivalGraph.getContext('2d') : null;
+const confidenceGraph = document.getElementById('confidenceGraph');
+const ctxConfidence = confidenceGraph ? confidenceGraph.getContext('2d') : null;
+const trainingProgress = document.getElementById('trainingProgress');
+const ctxTraining = trainingProgress ? trainingProgress.getContext('2d') : null;
 
 // Game constants - optimized for better AI learning
 const WIDTH = 400;
@@ -31,6 +55,11 @@ const SPEED_MULTIPLIER = 3; // Game speed multiplier
 let totalGenerations = 0;
 let allTimeBest = 0;
 let generationBests = [];
+let learningRates = [];
+let speciesCounts = [];
+let survivalRates = [];
+let confidenceLevels = [];
+let complexityScores = [];
 
 // Enhanced Neural Network class with better architecture
 class NeuralNetwork {
@@ -127,10 +156,6 @@ class NeuralNetwork {
             }
         }
         return result;
-    }
-
-    sigmoid(x) {
-        return 1 / (1 + Math.exp(-x));
     }
 
     copy() {
@@ -332,6 +357,7 @@ class Bird {
     }
 
     show() {
+        if (!ctx) return;
         // Dynamic color based on performance
         let intensity = Math.min(255, this.score / 10);
         ctx.fillStyle = `rgb(255, ${255 - intensity}, 0)`;
@@ -393,6 +419,7 @@ class Pipe {
     }
 
     show() {
+        if (!ctx) return;
         // Gradient pipe colors
         let gradient = ctx.createLinearGradient(this.x, 0, this.x + this.width, 0);
         gradient.addColorStop(0, '#2d5016');
@@ -475,6 +502,7 @@ class Population {
     }
 
     show() {
+        if (!ctx) return;
         // Show only living birds, with best bird highlighted
         let best = this.getBestBird();
         
@@ -521,6 +549,36 @@ class Population {
         // Update all-time best
         allTimeBest = Math.max(allTimeBest, this.bestScore);
         generationBests.push(this.bestScore);
+
+        // Collect additional metrics for graphs
+        const aliveCount = this.birds.filter(bird => !bird.dead).length;
+        const survivalRate = aliveCount / this.birds.length;
+        survivalRates.push(survivalRate);
+
+        // Learning rate (mutation rate) - could be adaptive
+        const currentMutationRate = MUTATION_RATE * (1 + Math.sin(totalGenerations * 0.1) * 0.1);
+        learningRates.push(currentMutationRate);
+
+        // Species diversity (simplified)
+        const speciesDiversity = Math.max(1, Math.floor(this.bestScore / 50));
+        speciesCounts.push(speciesDiversity);
+
+        // Neural complexity (based on connections and activations)
+        let totalComplexity = 0;
+        this.birds.forEach(bird => {
+            if (bird.brain && bird.hiddenActivations) {
+                const activationSum = bird.hiddenActivations.reduce((sum, act) => sum + Math.abs(act[0]), 0);
+                totalComplexity += activationSum;
+            }
+        });
+        const avgComplexity = totalComplexity / this.birds.length;
+        complexityScores.push(avgComplexity);
+
+        // Keep arrays at reasonable size
+        if (learningRates.length > 100) learningRates.shift();
+        if (speciesCounts.length > 100) speciesCounts.shift();
+        if (survivalRates.length > 100) survivalRates.shift();
+        if (complexityScores.length > 100) complexityScores.shift();
     }
 
     // Tournament selection for better diversity
@@ -625,6 +683,7 @@ class Game {
     }
 
     createBackgroundGradient() {
+        if (!ctx) return '#87CEEB'; // Fallback color
         let gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
         gradient.addColorStop(0, '#87CEEB');
         gradient.addColorStop(1, '#98FB98');
@@ -634,66 +693,93 @@ class Game {
     update() {
         if (this.paused) return;
         
-        // Dynamic pipe spawning based on population performance
-        let spawnRate = Math.max(60, 120 - this.population.generation);
-        if (this.frameCount % spawnRate === 0 && this.frameCount > 30) {
-            this.pipes.push(new Pipe(this.population.generation));
-        }
-
-        this.population.update(this.pipes);
-        
-        for (let pipe of this.pipes) {
-            pipe.update();
-        }
-        
-        this.pipes = this.pipes.filter(pipe => !pipe.offscreen());
-
-        if (this.population.allDead()) {
-            this.population.nextGeneration();
-            this.pipes = [];
-            this.frameCount = 0;
-            
-            // Add first pipe for new generation
-            setTimeout(() => {
+        try {
+            // Dynamic pipe spawning based on population performance
+            let spawnRate = Math.max(60, 120 - this.population.generation);
+            if (this.frameCount % spawnRate === 0 && this.frameCount > 30) {
                 this.pipes.push(new Pipe(this.population.generation));
-            }, 30);
-        }
+            }
 
-        this.frameCount++;
+            this.population.update(this.pipes);
+            
+            for (let pipe of this.pipes) {
+                pipe.update();
+            }
+            
+            this.pipes = this.pipes.filter(pipe => !pipe.offscreen());
+
+            if (this.population.allDead()) {
+                this.population.nextGeneration();
+                this.pipes = [];
+                this.frameCount = 0;
+                
+                // Add first pipe for new generation
+                setTimeout(() => {
+                    this.pipes.push(new Pipe(this.population.generation));
+                }, 30);
+            }
+
+            this.frameCount++;
+        } catch (error) {
+            console.error('❌ Error in game update:', error);
+        }
     }
 
     show() {
-        // Clear canvas with gradient background
-        ctx.fillStyle = this.backgroundGradient;
-        ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-        // Draw clouds for ambiance
-        this.drawClouds();
-
-        // Draw pipes
-        for (let pipe of this.pipes) {
-            pipe.show();
+        if (!ctx) {
+            console.warn('⚠️ Canvas context not available for rendering');
+            return;
         }
-
-        // Draw population
-        this.population.show();
-
-        // Update info display
-        this.updateInfoDisplay();
-
-        // Visualize neural networks
-        let bestBird = this.population.getBestBird();
-        let aliveBirds = this.population.getAliveBirds();
         
-        this.visualizeNeural(bestBird, ctx1, 'Best Bird');
-        if (aliveBirds.length > 1) {
-            this.visualizeNeural(aliveBirds[1], ctx2, 'Other Bird');
-        } else if (aliveBirds.length > 0) {
-            this.visualizeNeural(aliveBirds[0], ctx2, 'Last Bird');
+        try {
+            // Clear canvas with gradient background
+            ctx.fillStyle = this.backgroundGradient;
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            // Draw clouds for ambiance
+            this.drawClouds();
+
+            // Draw pipes
+            for (let pipe of this.pipes) {
+                pipe.show();
+            }
+
+            // Draw population
+            this.population.show();
+
+            // Update info display
+            this.updateInfoDisplay();
+
+            // Visualize neural networks
+            let bestBird = this.population.getBestBird();
+            let aliveBirds = this.population.getAliveBirds();
+            
+            this.visualizeNeural(bestBird, ctx1, 'Best Bird');
+            if (aliveBirds.length > 1) {
+                this.visualizeNeural(aliveBirds[1], ctx2, 'Other Bird');
+            } else if (aliveBirds.length > 0) {
+                this.visualizeNeural(aliveBirds[0], ctx2, 'Last Bird');
+            }
+
+            // Draw additional graphs
+            this.drawFitnessGraph();
+            this.drawDiversityGraph();
+            this.drawActivityHeatmap();
+            this.drawGenePoolGraph();
+            this.drawLearningRateGraph();
+            this.drawSpeciesGraph();
+            this.drawPerformanceHistogram();
+            this.drawComplexityGraph();
+            this.drawSurvivalGraph();
+            this.drawConfidenceGraph();
+            this.drawTrainingProgress();
+        } catch (error) {
+            console.error('❌ Error in game show:', error);
         }
     }
 
     drawClouds() {
+        if (!ctx) return;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         let cloudOffset = (this.frameCount * 0.2) % (WIDTH + 100);
         
@@ -711,97 +797,113 @@ class Game {
     }
 
     updateInfoDisplay() {
-        let aliveBirds = this.population.getAliveBirds();
-        document.getElementById('generation').textContent = this.population.generation;
-        document.getElementById('alive').textContent = aliveBirds.length;
-        document.getElementById('bestScore').textContent = this.population.bestScore;
-        
-        // Update stat value classes based on values
-        const aliveElement = document.getElementById('alive');
-        if (aliveBirds.length > 50) {
-            aliveElement.className = 'stat-value';
-        } else if (aliveBirds.length > 10) {
-            aliveElement.className = 'stat-value warning';
-        } else {
-            aliveElement.className = 'stat-value danger';
-        }
-        
-        // Add additional stats
-        let avgScoreElement = document.getElementById('avgScore');
-        if (avgScoreElement) {
-            avgScoreElement.textContent = Math.round(this.population.avgScore);
-        }
-        
-        let allTimeBestElement = document.getElementById('allTimeBest');
-        if (allTimeBestElement) {
-            allTimeBestElement.textContent = allTimeBest;
-        }
+        try {
+            let aliveBirds = this.population.getAliveBirds();
+            
+            // Safely update DOM elements
+            const generationEl = document.getElementById('generation');
+            const aliveEl = document.getElementById('alive');
+            const bestScoreEl = document.getElementById('bestScore');
+            
+            if (generationEl) generationEl.textContent = this.population.generation;
+            if (aliveEl) aliveEl.textContent = aliveBirds.length;
+            if (bestScoreEl) bestScoreEl.textContent = this.population.bestScore;
+            
+            // Update stat value classes based on values
+            if (aliveEl) {
+                if (aliveBirds.length > 50) {
+                    aliveEl.className = 'stat-value';
+                } else if (aliveBirds.length > 10) {
+                    aliveEl.className = 'stat-value warning';
+                } else {
+                    aliveEl.className = 'stat-value danger';
+                }
+            }
+            
+            // Add additional stats
+            let avgScoreElement = document.getElementById('avgScore');
+            if (avgScoreElement) {
+                avgScoreElement.textContent = Math.round(this.population.avgScore);
+            }
+            
+            let allTimeBestElement = document.getElementById('allTimeBest');
+            if (allTimeBestElement) {
+                allTimeBestElement.textContent = allTimeBest;
+            }
 
-        // Update game status
-        const statusIndicator = document.getElementById('statusIndicator');
-        const gameStatus = document.getElementById('gameStatus');
-        
-        if (this.paused) {
-            statusIndicator.className = 'status-indicator paused';
-            gameStatus.textContent = 'Paused';
-            gameStatus.className = 'stat-value warning';
-        } else if (aliveBirds.length === 0) {
-            statusIndicator.className = 'status-indicator stopped';
-            gameStatus.textContent = 'Evolving';
-            gameStatus.className = 'stat-value danger';
-        } else {
-            statusIndicator.className = 'status-indicator running';
-            gameStatus.textContent = 'Learning';
-            gameStatus.className = 'stat-value';
+            // Update game status
+            const statusIndicator = document.getElementById('statusIndicator');
+            const gameStatus = document.getElementById('gameStatus');
+            
+            if (this.paused) {
+                if (statusIndicator) statusIndicator.className = 'status-indicator paused';
+                if (gameStatus) {
+                    gameStatus.textContent = 'Paused';
+                    gameStatus.className = 'stat-value warning';
+                }
+            } else if (aliveBirds.length === 0) {
+                if (statusIndicator) statusIndicator.className = 'status-indicator stopped';
+                if (gameStatus) {
+                    gameStatus.textContent = 'Evolving';
+                    gameStatus.className = 'stat-value danger';
+                }
+            } else {
+                if (statusIndicator) statusIndicator.className = 'status-indicator running';
+                if (gameStatus) {
+                    gameStatus.textContent = 'Learning';
+                    gameStatus.className = 'stat-value';
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error in updateInfoDisplay:', error);
         }
-    }
-
-    visualizeNeural(bird, context, label) {
-        context.clearRect(0, 0, 200, 150);
+    }    visualizeNeural(bird, context, label) {
+        if (!context) return;
+        context.clearRect(0, 0, 400, 300);
         
         if (!bird || !bird.hiddenActivations) {
             // Show "No Data" message when bird is not available
             context.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            context.font = '12px Inter';
-            context.fillText('No Active Bird', 60, 75);
+            context.font = '16px Inter';
+            context.fillText('No Active Bird', 150, 150);
             return;
         }
 
         // Background with subtle gradient
-        const gradient = context.createLinearGradient(0, 0, 200, 150);
+        const gradient = context.createLinearGradient(0, 0, 400, 300);
         gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
         context.fillStyle = gradient;
-        context.fillRect(0, 0, 200, 150);
+        context.fillRect(0, 0, 400, 300);
 
         // Title and score with better typography
         context.fillStyle = '#00d4ff';
-        context.font = 'bold 11px Orbitron, monospace';
-        context.fillText(label, 5, 15);
+        context.font = 'bold 16px Orbitron, monospace';
+        context.fillText(label, 10, 25);
         
         context.fillStyle = '#2ecc71';
-        context.font = '10px Inter';
-        context.fillText(`Score: ${bird.score}`, 5, 30);
-        context.fillText(`Fitness: ${Math.round(bird.fitness * 1000)}`, 5, 42);
+        context.font = '14px Inter';
+        context.fillText(`Score: ${bird.score}`, 10, 45);
+        context.fillText(`Fitness: ${Math.round(bird.fitness * 1000)}`, 10, 65);
 
-        // Network visualization with improved layout
+        // Network visualization with improved layout for larger canvas
         let inputPositions = [
-            {x: 25, y: 60}, {x: 25, y: 75}, {x: 25, y: 90},
-            {x: 25, y: 105}, {x: 25, y: 120}, {x: 25, y: 135}
+            {x: 50, y: 100}, {x: 50, y: 120}, {x: 50, y: 140},
+            {x: 50, y: 160}, {x: 50, y: 180}, {x: 50, y: 200}
         ];
         
         let hiddenPositions = [];
         for (let i = 0; i < 12; i++) {
             hiddenPositions.push({
-                x: 80 + (i % 4) * 18,
-                y: 60 + Math.floor(i / 4) * 20
+                x: 150 + (i % 4) * 30,
+                y: 100 + Math.floor(i / 4) * 30
             });
         }
         
-        let outputPosition = {x: 170, y: 90};
+        let outputPosition = {x: 330, y: 160};
 
         // Draw connections with activation-based opacity
-        context.lineWidth = 1;
+        context.lineWidth = 2;
         
         // Input to hidden connections (simplified)
         for (let i = 0; i < Math.min(inputPositions.length, 3); i++) {
@@ -820,12 +922,12 @@ class Game {
         context.fillStyle = '#3498db';
         for (let pos of inputPositions) {
             context.beginPath();
-            context.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
+            context.arc(pos.x, pos.y, 6, 0, 2 * Math.PI);
             context.fill();
             
             // Add glow effect
             context.shadowColor = '#3498db';
-            context.shadowBlur = 5;
+            context.shadowBlur = 8;
             context.fill();
             context.shadowBlur = 0;
         }
@@ -836,7 +938,7 @@ class Game {
             let intensity = Math.min(255, activation * 255);
             
             // Create pulsing effect for high activation
-            let radius = 3 + (activation > 0.7 ? Math.sin(Date.now() * 0.01) * 1 : 0);
+            let radius = 6 + (activation > 0.7 ? Math.sin(Date.now() * 0.01) * 2 : 0);
             
             context.fillStyle = `rgb(${intensity}, ${255 - intensity}, 50)`;
             context.beginPath();
@@ -846,7 +948,7 @@ class Game {
             // Add glow for highly active neurons
             if (activation > 0.5) {
                 context.shadowColor = `rgb(${intensity}, ${255 - intensity}, 50)`;
-                context.shadowBlur = 8;
+                context.shadowBlur = 12;
                 context.fill();
                 context.shadowBlur = 0;
             }
@@ -856,28 +958,743 @@ class Game {
         const isFlapping = bird.brain && bird.framesSinceFlap < 5;
         context.fillStyle = isFlapping ? '#e74c3c' : '#95a5a6';
         context.beginPath();
-        context.arc(outputPosition.x, outputPosition.y, isFlapping ? 5 : 4, 0, 2 * Math.PI);
+        context.arc(outputPosition.x, outputPosition.y, isFlapping ? 8 : 6, 0, 2 * Math.PI);
         context.fill();
         
         if (isFlapping) {
             context.shadowColor = '#e74c3c';
-            context.shadowBlur = 10;
+            context.shadowBlur = 15;
             context.fill();
             context.shadowBlur = 0;
         }
 
         // Add input labels
         const inputLabels = ['Y', 'V', 'D', 'G', 'H', 'T'];
-        context.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        context.font = '8px Inter';
+        context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        context.font = '12px Inter';
         inputLabels.forEach((label, i) => {
             if (i < inputPositions.length) {
-                context.fillText(label, inputPositions[i].x - 15, inputPositions[i].y + 2);
+                context.fillText(label, inputPositions[i].x - 25, inputPositions[i].y + 4);
             }
         });
 
         // Add output label
-        context.fillText('FLAP', outputPosition.x - 15, outputPosition.y - 10);
+        context.fillText('FLAP', outputPosition.x - 20, outputPosition.y - 15);
+    }
+
+    // New graph visualization functions
+    drawFitnessGraph() {
+        if (!ctxFitness) return;
+        ctxFitness.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxFitness.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxFitness.fillStyle = gradient;
+        ctxFitness.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxFitness.fillStyle = '#00d4ff';
+        ctxFitness.font = 'bold 16px Orbitron, monospace';
+        ctxFitness.fillText('Fitness Evolution', 10, 25);
+
+        if (generationBests.length === 0) {
+            ctxFitness.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxFitness.font = '14px Inter';
+            ctxFitness.fillText('Waiting for data...', 140, 150);
+            return;
+        }
+
+        // Graph area dimensions
+        const graphLeft = 50;
+        const graphTop = 40;
+        const graphWidth = 320;
+        const graphHeight = 220;
+        const graphBottom = graphTop + graphHeight;
+        const graphRight = graphLeft + graphWidth;
+
+        // Draw grid lines
+        ctxFitness.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctxFitness.lineWidth = 1;
+
+        // Vertical grid lines (generations)
+        for (let i = 0; i <= 10; i++) {
+            const x = graphLeft + (i * graphWidth) / 10;
+            ctxFitness.beginPath();
+            ctxFitness.moveTo(x, graphTop);
+            ctxFitness.lineTo(x, graphBottom);
+            ctxFitness.stroke();
+
+            // Generation labels
+            if (i % 2 === 0) {
+                ctxFitness.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctxFitness.font = '10px Inter';
+                const genNum = Math.round((i * generationBests.length) / 10);
+                ctxFitness.fillText(genNum.toString(), x - 5, graphBottom + 15);
+            }
+        }
+
+        // Horizontal grid lines (fitness values)
+        const maxFitness = Math.max(...generationBests);
+        for (let i = 0; i <= 10; i++) {
+            const y = graphBottom - (i * graphHeight) / 10;
+            ctxFitness.beginPath();
+            ctxFitness.moveTo(graphLeft, y);
+            ctxFitness.lineTo(graphRight, y);
+            ctxFitness.stroke();
+
+            // Fitness value labels
+            ctxFitness.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctxFitness.font = '10px Inter';
+            const fitnessValue = Math.round((i * maxFitness) / 10);
+            ctxFitness.fillText(fitnessValue.toString(), graphLeft - 35, y + 3);
+        }
+
+        // Draw axis labels
+        ctxFitness.fillStyle = '#00d4ff';
+        ctxFitness.font = '12px Inter';
+        ctxFitness.fillText('Generations', graphLeft + graphWidth/2 - 30, graphBottom + 30);
+        ctxFitness.save();
+        ctxFitness.translate(15, graphTop + graphHeight/2);
+        ctxFitness.rotate(-Math.PI/2);
+        ctxFitness.fillText('Fitness Score', 0, 0);
+        ctxFitness.restore();
+
+        // Draw fitness line graph
+        ctxFitness.strokeStyle = '#00d4ff';
+        ctxFitness.lineWidth = 3;
+        ctxFitness.beginPath();
+
+        const scaleX = graphWidth / Math.max(generationBests.length - 1, 1);
+        const scaleY = graphHeight / Math.max(maxFitness, 1);
+
+        generationBests.forEach((fitness, i) => {
+            const x = graphLeft + i * scaleX;
+            const y = graphBottom - fitness * scaleY;
+
+            if (i === 0) {
+                ctxFitness.moveTo(x, y);
+            } else {
+                ctxFitness.lineTo(x, y);
+            }
+        });
+
+        ctxFitness.stroke();
+
+        // Add data points with values
+        generationBests.forEach((fitness, i) => {
+            const x = graphLeft + i * scaleX;
+            const y = graphBottom - fitness * scaleY;
+
+            // Draw point
+            ctxFitness.fillStyle = '#00d4ff';
+            ctxFitness.beginPath();
+            ctxFitness.arc(x, y, 4, 0, Math.PI * 2);
+            ctxFitness.fill();
+
+            // Show value on hover points (every 5th point or last point)
+            if (i % 5 === 0 || i === generationBests.length - 1) {
+                ctxFitness.fillStyle = '#ffffff';
+                ctxFitness.font = '10px Inter';
+                ctxFitness.fillText(Math.round(fitness).toString(), x - 8, y - 8);
+            }
+        });
+
+        // Current generation marker
+        if (generationBests.length > 0) {
+            const currentX = graphLeft + (generationBests.length - 1) * scaleX;
+            const currentY = graphBottom - generationBests[generationBests.length - 1] * scaleY;
+
+            ctxFitness.strokeStyle = '#ff6b6b';
+            ctxFitness.lineWidth = 2;
+            ctxFitness.beginPath();
+            ctxFitness.arc(currentX, currentY, 8, 0, Math.PI * 2);
+            ctxFitness.stroke();
+
+            // Current value label
+            ctxFitness.fillStyle = '#ff6b6b';
+            ctxFitness.font = 'bold 12px Inter';
+            ctxFitness.fillText(`Current: ${Math.round(generationBests[generationBests.length - 1])}`,
+                              currentX + 12, currentY - 5);
+        }
+
+        // Statistics
+        ctxFitness.fillStyle = '#2ecc71';
+        ctxFitness.font = '12px Inter';
+        ctxFitness.fillText(`Max: ${Math.round(maxFitness)}`, graphRight - 80, 35);
+        ctxFitness.fillText(`Avg: ${Math.round(generationBests.reduce((a,b) => a+b, 0) / generationBests.length)}`, graphRight - 80, 50);
+        ctxFitness.fillText(`Total Gens: ${generationBests.length}`, graphRight - 80, 65);
+    }
+
+    drawDiversityGraph() {
+        if (!ctxDiversity) return;
+        ctxDiversity.clearRect(0, 0, 400, 300);
+        
+        // Background
+        const gradient = ctxDiversity.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxDiversity.fillStyle = gradient;
+        ctxDiversity.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxDiversity.fillStyle = '#00d4ff';
+        ctxDiversity.font = 'bold 16px Orbitron, monospace';
+        ctxDiversity.fillText('Population Diversity', 10, 25);
+
+        if (!this.population || !this.population.birds) {
+            ctxDiversity.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxDiversity.font = '14px Inter';
+            ctxDiversity.fillText('No population data', 140, 150);
+            return;
+        }
+
+        // Calculate diversity metrics
+        const aliveCount = this.population.birds.filter(bird => bird.alive).length;
+        const totalFitness = this.population.birds.reduce((sum, bird) => sum + bird.fitness, 0);
+        const avgFitness = totalFitness / this.population.birds.length;
+
+        // Draw diversity bars
+        const barWidth = 60;
+        const barSpacing = 80;
+        const startX = 50;
+        
+        // Alive birds bar
+        ctxDiversity.fillStyle = '#2ecc71';
+        const aliveHeight = (aliveCount / POP_SIZE) * 200;
+        ctxDiversity.fillRect(startX, 250 - aliveHeight, barWidth, aliveHeight);
+        
+        ctxDiversity.fillStyle = '#ffffff';
+        ctxDiversity.font = '12px Inter';
+        ctxDiversity.fillText('Alive', startX + 10, 270);
+        ctxDiversity.fillText(aliveCount.toString(), startX + 15, 250 - aliveHeight - 10);
+
+        // Average fitness bar
+        ctxDiversity.fillStyle = '#e74c3c';
+        const fitnessHeight = Math.min(avgFitness * 1000, 200);
+        ctxDiversity.fillRect(startX + barSpacing, 250 - fitnessHeight, barWidth, fitnessHeight);
+        
+        ctxDiversity.fillStyle = '#ffffff';
+        ctxDiversity.fillText('Avg Fit', startX + barSpacing + 5, 270);
+        ctxDiversity.fillText(Math.round(avgFitness * 1000).toString(), startX + barSpacing + 10, 250 - fitnessHeight - 10);
+    }
+
+    drawActivityHeatmap() {
+        if (!ctxActivity) return;
+        ctxActivity.clearRect(0, 0, 400, 300);
+        
+        // Background
+        const gradient = ctxActivity.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxActivity.fillStyle = gradient;
+        ctxActivity.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxActivity.fillStyle = '#00d4ff';
+        ctxActivity.font = 'bold 16px Orbitron, monospace';
+        ctxActivity.fillText('Neural Activity Heatmap', 10, 25);
+
+        if (!this.population || !this.population.birds) {
+            ctxActivity.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxActivity.font = '14px Inter';
+            ctxActivity.fillText('No activity data', 140, 150);
+            return;
+        }
+
+        // Create heatmap grid
+        const gridSize = 20;
+        const startX = 50;
+        const startY = 60;
+        
+        for (let x = 0; x < 12; x++) {
+            for (let y = 0; y < 8; y++) {
+                // Calculate average activation for this neuron across population
+                let totalActivation = 0;
+                let count = 0;
+                
+                this.population.birds.forEach(bird => {
+                    if (bird.hiddenActivations && bird.hiddenActivations[x + y * 4]) {
+                        totalActivation += Math.abs(bird.hiddenActivations[x + y * 4][0]);
+                        count++;
+                    }
+                });
+                
+                const avgActivation = count > 0 ? totalActivation / count : 0;
+                const intensity = Math.min(255, avgActivation * 255);
+                
+                // Color based on activation intensity
+                ctxActivity.fillStyle = `rgb(${intensity}, ${100}, ${255 - intensity})`;
+                ctxActivity.fillRect(startX + x * gridSize, startY + y * gridSize, gridSize - 2, gridSize - 2);
+                
+                // Add activation value
+                if (avgActivation > 0.1) {
+                    ctxActivity.fillStyle = '#ffffff';
+                    ctxActivity.font = '8px Inter';
+                    ctxActivity.fillText(avgActivation.toFixed(1), startX + x * gridSize + 2, startY + y * gridSize + 12);
+                }
+            }
+        }
+
+        // Add labels
+        ctxActivity.fillStyle = '#ffffff';
+        ctxActivity.font = '12px Inter';
+        ctxActivity.fillText('Hidden Layer Neurons', 120, 40);
+    }
+
+    drawGenePoolGraph() {
+        if (!ctxGenePool) return;
+        ctxGenePool.clearRect(0, 0, 400, 300);
+        
+        // Background
+        const gradient = ctxGenePool.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxGenePool.fillStyle = gradient;
+        ctxGenePool.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxGenePool.fillStyle = '#00d4ff';
+        ctxGenePool.font = 'bold 16px Orbitron, monospace';
+        ctxGenePool.fillText('Gene Pool Analysis', 10, 25);
+
+        if (!this.population || !this.population.birds) {
+            ctxGenePool.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxGenePool.font = '14px Inter';
+            ctxGenePool.fillText('No gene data', 150, 150);
+            return;
+        }
+
+        // Analyze gene diversity
+        const geneStats = {
+            inputHidden: { total: 0, unique: 0 },
+            hiddenOutput: { total: 0, unique: 0 }
+        };
+
+        const geneSet = new Set();
+        
+        this.population.birds.forEach(bird => {
+            if (bird.brain) {
+                // Count unique weight patterns
+                const weightsStr = JSON.stringify(bird.brain.weightsIH) + JSON.stringify(bird.brain.weightsHO);
+                geneSet.add(weightsStr);
+                
+                geneStats.inputHidden.total += bird.brain.weightsIH.flat().length;
+                geneStats.hiddenOutput.total += bird.brain.weightsHO.flat().length;
+            }
+        });
+
+        geneStats.inputHidden.unique = geneSet.size;
+        geneStats.hiddenOutput.unique = geneStats.inputHidden.unique; // Same for both layers
+
+        // Draw gene diversity visualization
+        const centerX = 200;
+        const centerY = 150;
+        const radius = 80;
+
+        // Draw circles representing gene diversity
+        ctxGenePool.strokeStyle = '#00d4ff';
+        ctxGenePool.lineWidth = 3;
+        ctxGenePool.beginPath();
+        ctxGenePool.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctxGenePool.stroke();
+
+        // Fill based on diversity
+        const diversityRatio = geneStats.inputHidden.unique / this.population.birds.length;
+        const fillRadius = radius * diversityRatio;
+        
+        ctxGenePool.fillStyle = `rgba(0, 212, 255, ${diversityRatio * 0.5})`;
+        ctxGenePool.beginPath();
+        ctxGenePool.arc(centerX, centerY, fillRadius, 0, Math.PI * 2);
+        ctxGenePool.fill();
+
+        // Add text
+        ctxGenePool.fillStyle = '#ffffff';
+        ctxGenePool.font = '14px Inter';
+        ctxGenePool.fillText(`Unique Genotypes: ${geneStats.inputHidden.unique}`, 100, 220);
+        ctxGenePool.fillText(`Total Population: ${this.population.birds.length}`, 100, 240);
+        ctxGenePool.fillText(`Diversity: ${(diversityRatio * 100).toFixed(1)}%`, 100, 260);
+    }
+
+    // Additional graph functions for comprehensive AI monitoring
+    drawLearningRateGraph() {
+        if (!ctxLearning) return;
+        ctxLearning.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxLearning.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxLearning.fillStyle = gradient;
+        ctxLearning.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxLearning.fillStyle = '#00d4ff';
+        ctxLearning.font = 'bold 16px Orbitron, monospace';
+        ctxLearning.fillText('Learning Rate Evolution', 10, 25);
+
+        if (learningRates.length === 0) {
+            ctxLearning.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxLearning.font = '14px Inter';
+            ctxLearning.fillText('No learning data yet...', 120, 150);
+            return;
+        }
+
+        // Graph area
+        const graphLeft = 50, graphTop = 40, graphWidth = 320, graphHeight = 220;
+
+        // Draw learning rate line
+        ctxLearning.strokeStyle = '#ff6b6b';
+        ctxLearning.lineWidth = 3;
+        ctxLearning.beginPath();
+
+        const maxRate = Math.max(...learningRates, MUTATION_RATE);
+        const scaleX = graphWidth / Math.max(learningRates.length - 1, 1);
+        const scaleY = graphHeight / maxRate;
+
+        learningRates.forEach((rate, i) => {
+            const x = graphLeft + i * scaleX;
+            const y = graphTop + graphHeight - rate * scaleY;
+
+            if (i === 0) ctxLearning.moveTo(x, y);
+            else ctxLearning.lineTo(x, y);
+        });
+
+        ctxLearning.stroke();
+
+        // Current value
+        ctxLearning.fillStyle = '#ff6b6b';
+        ctxLearning.font = '12px Inter';
+        ctxLearning.fillText(`Current: ${(learningRates[learningRates.length - 1] || MUTATION_RATE).toFixed(3)}`, 280, 35);
+    }
+
+    drawSpeciesGraph() {
+        if (!ctxSpecies) return;
+        ctxSpecies.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxSpecies.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxSpecies.fillStyle = gradient;
+        ctxSpecies.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxSpecies.fillStyle = '#00d4ff';
+        ctxSpecies.font = 'bold 16px Orbitron, monospace';
+        ctxSpecies.fillText('Species Diversity', 10, 25);
+
+        if (!this.population || !this.population.birds) {
+            ctxSpecies.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxSpecies.font = '14px Inter';
+            ctxSpecies.fillText('No population data', 140, 150);
+            return;
+        }
+
+        // Simple species detection based on fitness patterns
+        const species = {};
+        this.population.birds.forEach((bird, i) => {
+            const fitnessRange = Math.floor(bird.fitness / 100);
+            species[fitnessRange] = (species[fitnessRange] || 0) + 1;
+        });
+
+        // Draw species bars
+        const barWidth = 30;
+        let x = 50;
+        Object.entries(species).forEach(([range, count]) => {
+            const height = (count / POP_SIZE) * 200;
+
+            ctxSpecies.fillStyle = `hsl(${parseInt(range) * 60}, 70%, 50%)`;
+            ctxSpecies.fillRect(x, 250 - height, barWidth, height);
+
+            ctxSpecies.fillStyle = '#ffffff';
+            ctxSpecies.font = '10px Inter';
+            ctxSpecies.fillText(`${range * 100}-${(range + 1) * 100}`, x, 270);
+            ctxSpecies.fillText(count.toString(), x + 5, 250 - height - 5);
+
+            x += barWidth + 10;
+        });
+
+        ctxSpecies.fillStyle = '#00d4ff';
+        ctxSpecies.font = '12px Inter';
+        ctxSpecies.fillText(`Species: ${Object.keys(species).length}`, 280, 35);
+    }
+
+    drawPerformanceHistogram() {
+        if (!ctxPerformance) return;
+        ctxPerformance.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxPerformance.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxPerformance.fillStyle = gradient;
+        ctxPerformance.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxPerformance.fillStyle = '#00d4ff';
+        ctxPerformance.font = 'bold 16px Orbitron, monospace';
+        ctxPerformance.fillText('Performance Distribution', 10, 25);
+
+        if (!this.population || !this.population.birds) {
+            ctxPerformance.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxPerformance.font = '14px Inter';
+            ctxPerformance.fillText('No performance data', 130, 150);
+            return;
+        }
+
+        // Create histogram bins
+        const scores = this.population.birds.map(bird => bird.score);
+        const maxScore = Math.max(...scores);
+        const bins = Array(10).fill(0);
+
+        scores.forEach(score => {
+            const binIndex = Math.min(9, Math.floor((score / Math.max(maxScore, 1)) * 10));
+            bins[binIndex]++;
+        });
+
+        // Draw histogram
+        const barWidth = 25;
+        const maxCount = Math.max(...bins);
+
+        bins.forEach((count, i) => {
+            const x = 50 + i * (barWidth + 5);
+            const height = (count / Math.max(maxCount, 1)) * 200;
+
+            ctxPerformance.fillStyle = '#2ecc71';
+            ctxPerformance.fillRect(x, 250 - height, barWidth, height);
+
+            ctxPerformance.fillStyle = '#ffffff';
+            ctxPerformance.font = '10px Inter';
+            ctxPerformance.fillText(Math.round(maxScore * i / 10).toString(), x, 270);
+        });
+
+        // Statistics
+        ctxPerformance.fillStyle = '#00d4ff';
+        ctxPerformance.font = '12px Inter';
+        const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+        ctxPerformance.fillText(`Avg: ${Math.round(avgScore)}`, 280, 35);
+        ctxPerformance.fillText(`Max: ${maxScore}`, 280, 50);
+    }
+
+    drawComplexityGraph() {
+        if (!ctxComplexity) return;
+        ctxComplexity.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxComplexity.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxComplexity.fillStyle = gradient;
+        ctxComplexity.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxComplexity.fillStyle = '#00d4ff';
+        ctxComplexity.font = 'bold 16px Orbitron, monospace';
+        ctxComplexity.fillText('Neural Complexity', 10, 25);
+
+        if (complexityScores.length === 0) {
+            ctxComplexity.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxComplexity.font = '14px Inter';
+            ctxComplexity.fillText('Analyzing complexity...', 120, 150);
+            return;
+        }
+
+        // Draw complexity trend
+        ctxComplexity.strokeStyle = '#9b59b6';
+        ctxComplexity.lineWidth = 3;
+        ctxComplexity.beginPath();
+
+        const maxComplexity = Math.max(...complexityScores);
+        const scaleX = 320 / Math.max(complexityScores.length - 1, 1);
+        const scaleY = 200 / Math.max(maxComplexity, 1);
+
+        complexityScores.forEach((complexity, i) => {
+            const x = 50 + i * scaleX;
+            const y = 260 - complexity * scaleY;
+
+            if (i === 0) ctxComplexity.moveTo(x, y);
+            else ctxComplexity.lineTo(x, y);
+        });
+
+        ctxComplexity.stroke();
+
+        // Current complexity
+        ctxComplexity.fillStyle = '#9b59b6';
+        ctxComplexity.font = '12px Inter';
+        const currentComplexity = complexityScores[complexityScores.length - 1] || 0;
+        ctxComplexity.fillText(`Complexity: ${currentComplexity.toFixed(2)}`, 250, 35);
+    }
+
+    drawSurvivalGraph() {
+        if (!ctxSurvival) return;
+        ctxSurvival.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxSurvival.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxSurvival.fillStyle = gradient;
+        ctxSurvival.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxSurvival.fillStyle = '#00d4ff';
+        ctxSurvival.font = 'bold 16px Orbitron, monospace';
+        ctxSurvival.fillText('Survival Rate', 10, 25);
+
+        if (survivalRates.length === 0) {
+            ctxSurvival.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxSurvival.font = '14px Inter';
+            ctxSurvival.fillText('Tracking survival...', 130, 150);
+            return;
+        }
+
+        // Draw survival rate line
+        ctxSurvival.strokeStyle = '#e67e22';
+        ctxSurvival.lineWidth = 3;
+        ctxSurvival.beginPath();
+
+        const scaleX = 320 / Math.max(survivalRates.length - 1, 1);
+        const scaleY = 200;
+
+        survivalRates.forEach((rate, i) => {
+            const x = 50 + i * scaleX;
+            const y = 260 - rate * scaleY;
+
+            if (i === 0) ctxSurvival.moveTo(x, y);
+            else ctxSurvival.lineTo(x, y);
+        });
+
+        ctxSurvival.stroke();
+
+        // Current survival rate
+        ctxSurvival.fillStyle = '#e67e22';
+        ctxSurvival.font = '12px Inter';
+        const currentRate = survivalRates[survivalRates.length - 1] || 0;
+        ctxSurvival.fillText(`Survival: ${(currentRate * 100).toFixed(1)}%`, 250, 35);
+    }
+
+    drawConfidenceGraph() {
+        if (!ctxConfidence) return;
+        ctxConfidence.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxConfidence.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxConfidence.fillStyle = gradient;
+        ctxConfidence.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxConfidence.fillStyle = '#00d4ff';
+        ctxConfidence.font = 'bold 16px Orbitron, monospace';
+        ctxConfidence.fillText('Decision Confidence', 10, 25);
+
+        if (!this.population || !this.population.birds) {
+            ctxConfidence.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxConfidence.font = '14px Inter';
+            ctxConfidence.fillText('Analyzing decisions...', 120, 150);
+            return;
+        }
+
+        // Calculate average confidence from neural network outputs
+        let totalConfidence = 0;
+        let birdCount = 0;
+
+        this.population.birds.forEach(bird => {
+            if (bird.brain && bird.hiddenActivations) {
+                const output = bird.brain.feedForward(bird.inputs || [0, 0, 0, 0, 0, 0]);
+                const confidence = Math.abs(output[0]); // Decision strength
+                totalConfidence += confidence;
+                birdCount++;
+            }
+        });
+
+        const avgConfidence = birdCount > 0 ? totalConfidence / birdCount : 0;
+
+        // Draw confidence meter
+        const centerX = 200;
+        const centerY = 180;
+        const radius = 80;
+
+        // Background circle
+        ctxConfidence.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctxConfidence.lineWidth = 20;
+        ctxConfidence.beginPath();
+        ctxConfidence.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctxConfidence.stroke();
+
+        // Confidence arc
+        ctxConfidence.strokeStyle = '#f39c12';
+        ctxConfidence.lineWidth = 20;
+        ctxConfidence.beginPath();
+        ctxConfidence.arc(centerX, centerY, radius, -Math.PI/2, -Math.PI/2 + (avgConfidence * Math.PI * 2));
+        ctxConfidence.stroke();
+
+        // Center text
+        ctxConfidence.fillStyle = '#ffffff';
+        ctxConfidence.font = 'bold 24px Orbitron';
+        ctxConfidence.fillText(`${(avgConfidence * 100).toFixed(0)}%`, centerX - 30, centerY + 8);
+
+        ctxConfidence.font = '14px Inter';
+        ctxConfidence.fillText('Confidence', centerX - 35, centerY + 30);
+    }
+
+    drawTrainingProgress() {
+        if (!ctxTraining) return;
+        ctxTraining.clearRect(0, 0, 400, 300);
+
+        // Background
+        const gradient = ctxTraining.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctxTraining.fillStyle = gradient;
+        ctxTraining.fillRect(0, 0, 400, 300);
+
+        // Title
+        ctxTraining.fillStyle = '#00d4ff';
+        ctxTraining.font = 'bold 16px Orbitron, monospace';
+        ctxTraining.fillText('Training Progress', 10, 25);
+
+        // Progress metrics
+        const progress = Math.min(100, (totalGenerations / 100) * 100);
+        const improvement = generationBests.length > 1 ?
+            ((generationBests[generationBests.length - 1] - generationBests[0]) / Math.max(generationBests[0], 1)) * 100 : 0;
+
+        // Draw progress bar
+        ctxTraining.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctxTraining.lineWidth = 20;
+        ctxTraining.beginPath();
+        ctxTraining.moveTo(50, 100);
+        ctxTraining.lineTo(350, 100);
+        ctxTraining.stroke();
+
+        ctxTraining.strokeStyle = '#2ecc71';
+        ctxTraining.beginPath();
+        ctxTraining.moveTo(50, 100);
+        ctxTraining.lineTo(50 + (progress * 3), 100);
+        ctxTraining.stroke();
+
+        // Progress text
+        ctxTraining.fillStyle = '#ffffff';
+        ctxTraining.font = 'bold 18px Orbitron';
+        ctxTraining.fillText(`${Math.round(progress)}%`, 180, 85);
+
+        // Stats
+        ctxTraining.fillStyle = '#00d4ff';
+        ctxTraining.font = '14px Inter';
+        ctxTraining.fillText(`Generations: ${totalGenerations}`, 50, 140);
+        ctxTraining.fillText(`Best Score: ${allTimeBest}`, 50, 160);
+        ctxTraining.fillText(`Improvement: ${improvement.toFixed(1)}%`, 50, 180);
+
+        // Training phases
+        const phases = ['Initializing', 'Exploring', 'Optimizing', 'Converging'];
+        const currentPhase = Math.min(3, Math.floor(progress / 25));
+
+        ctxTraining.fillStyle = '#f39c12';
+        ctxTraining.font = '16px Orbitron';
+        ctxTraining.fillText(`Phase: ${phases[currentPhase]}`, 50, 220);
     }
 
     togglePause() {
@@ -896,6 +1713,14 @@ class Game {
 
 // Initialize game
 const game = new Game();
+
+// Verify game initialization
+if (!game) {
+    console.error('❌ Failed to initialize game!');
+} else {
+    console.log('✅ Game initialized successfully');
+    console.log('Population size:', game.population ? game.population.birds.length : 'undefined');
+}
 
 // Add keyboard controls for user interaction
 document.addEventListener('keydown', (event) => {
@@ -988,33 +1813,43 @@ let frameCount = 0;
 let fps = 0;
 
 function animate(currentTime) {
-    // Calculate FPS
-    if (currentTime - lastTime >= 1000) {
-        fps = frameCount;
-        frameCount = 0;
-        lastTime = currentTime;
-    }
-    frameCount++;
+    try {
+        // Calculate FPS
+        if (currentTime - lastTime >= 1000) {
+            fps = frameCount;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
+        frameCount++;
 
-    // Run multiple updates per frame for faster learning
-    for (let i = 0; i < SPEED_MULTIPLIER; i++) {
-        game.update();
+        // Run multiple updates per frame for faster learning
+        for (let i = 0; i < SPEED_MULTIPLIER; i++) {
+            if (game && typeof game.update === 'function') {
+                game.update();
+            }
+        }
+        
+        if (game && typeof game.show === 'function') {
+            game.show();
+        }
+        
+        // Display FPS if stats are enabled
+        if (ctx && game && game.showStats) {
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText(`FPS: ${fps}`, WIDTH - 60, 20);
+            ctx.fillText(`Speed: ${SPEED_MULTIPLIER}x`, WIDTH - 80, 35);
+        }
+        
+        requestAnimationFrame(animate);
+    } catch (error) {
+        console.error('❌ Error in animate function:', error);
+        console.log('Stopping animation due to error');
     }
-    
-    game.show();
-    
-    // Display FPS if stats are enabled
-    if (game.showStats) {
-        ctx.fillStyle = 'white';
-        ctx.font = '12px Arial';
-        ctx.fillText(`FPS: ${fps}`, WIDTH - 60, 20);
-        ctx.fillText(`Speed: ${SPEED_MULTIPLIER}x`, WIDTH - 80, 35);
-    }
-    
-    requestAnimationFrame(animate);
 }
 
 // Start the game
+console.log('🚀 Starting animation loop...');
 animate(0);
 
 // Add instructions to the page
