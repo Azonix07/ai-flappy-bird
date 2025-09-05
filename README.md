@@ -1,6 +1,27 @@
 # 🧠 AI Flappy Bird - Neural Evolution
 
-An advanced AI implementation of Flappy Bird using neural networks and genetic algor## 🎯 Performance Metrics
+An advanced AI implementation of Flappy Bird using neural networks and genetic algorithms.
+
+## 🤖 How the AI Learns
+
+The AI learns to play Flappy Bird through **evolutionary learning** - a process inspired by natural selection:
+
+### The Learning Process:
+1. **Start with Random Birds**: Each bird has a neural network "brain" with random connections
+2. **Play the Game**: All birds try to play Flappy Bird simultaneously 
+3. **Survival of the Fittest**: Birds that survive longer and pass more pipes get higher scores
+4. **Create Next Generation**: The best birds' "brains" are combined and mutated to create smarter offspring
+5. **Repeat**: Each generation gets better as successful strategies are passed down
+
+### What the AI Learns:
+- **Timing**: When to flap to avoid pipes
+- **Positioning**: How to navigate through gaps
+- **Strategy**: Balancing speed and precision
+- **Adaptation**: Adjusting to changing pipe patterns
+
+Within 50 generations, the AI typically masters the game, achieving scores over 1000 points consistently!
+
+## 🎯 Performance Metrics
 
 The AI typically achieves:
 - **Generation 1-10**: Learning basic controls (0-100 points)

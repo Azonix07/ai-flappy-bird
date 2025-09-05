@@ -77,6 +77,23 @@ body {
   margin: 0 auto;
   padding: 2rem;
   min-height: 100vh;
+  background: linear-gradient(135deg, var(--background) 0%, var(--muted) 100%);
+  position: relative;
+}
+
+.app-container::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Header section */
@@ -531,16 +548,18 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
-/* Info panel */
+/* Enhanced info panel with better visual hierarchy */
 .info-panel {
-  background: linear-gradient(135deg, var(--accent), var(--muted));
+  background: linear-gradient(135deg, var(--background), var(--muted));
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 2.5rem;
   margin-bottom: 3rem;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInLeft 0.8s ease-out 1s both;
 }
 
 .info-panel::before {
@@ -550,24 +569,76 @@ body {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--warning), var(--primary));
+  background: linear-gradient(90deg, var(--warning), var(--primary), var(--success));
   border-radius: 16px 16px 0 0;
 }
 
+.info-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
 .info-text {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--foreground);
-  line-height: 1.7;
+  line-height: 1.8;
   margin: 0;
+  font-weight: 400;
+  text-align: left;
+  position: relative;
+  z-index: 1;
 }
 
 .info-text strong {
   color: var(--foreground);
-  font-weight: 600;
+  font-weight: 700;
   background: linear-gradient(135deg, var(--primary), var(--success));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.25rem;
+}
+
+.info-text strong::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.info-text strong:hover::after {
+  opacity: 1;
+}
+
+.info-text br {
+  margin-bottom: 1rem;
+  display: block;
+  content: "";
+}
+
+/* Add some visual elements to make it more engaging */
+.info-panel::after {
+  content: "🧠";
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  font-size: 2rem;
+  opacity: 0.1;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.info-panel:hover::after {
+  opacity: 0.2;
 }
 
 /* Stats section */
@@ -763,6 +834,7 @@ body {
   background: linear-gradient(135deg, var(--background), var(--muted));
   border-radius: 16px 16px 0 0;
   position: relative;
+  animation: fadeInUp 0.8s ease-out 1.2s both;
 }
 
 .footer::before {
@@ -781,19 +853,33 @@ body {
   color: var(--muted-foreground);
   margin-bottom: 0.5rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.footer p::before {
+  content: "⚡";
+  font-size: 1rem;
+  opacity: 0.7;
 }
 
 .footer a {
   color: var(--foreground);
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
 }
 
 .footer a:hover {
   color: var(--primary);
   text-decoration: none;
+  background: var(--accent);
+  transform: translateY(-1px);
 }
 
 .footer a::after {
@@ -805,6 +891,7 @@ body {
   height: 2px;
   background: linear-gradient(90deg, var(--primary), var(--success));
   transition: width 0.3s ease;
+  border-radius: 1px;
 }
 
 .footer a:hover::after {
@@ -901,7 +988,17 @@ body {
   }
 
   .info-panel {
-    padding: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .info-panel::after {
+    display: none; /* Hide the brain emoji on mobile for cleaner look */
   }
 
   .footer {
