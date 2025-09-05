@@ -94,6 +94,105 @@ Output (1 node):
 └── Flap decision (Sigmoid activation)
 ```
 
+## 🧮 Matrix System in Neural Networks
+
+The neural network in AI Flappy Bird relies on matrix operations for efficient computation of the bird's decisions. This system uses linear algebra to process inputs through the network layers.
+
+### Weight Matrices Structure
+
+The network consists of two weight matrices that define the connections between neurons:
+
+1. **Input-Hidden Matrix** (6×12): Connects 6 input features to 12 hidden neurons
+2. **Hidden-Output Matrix** (12×1): Connects 12 hidden neurons to 1 output neuron
+
+### Forward Propagation Process
+
+The decision-making happens through matrix multiplication:
+
+```
+Hidden_Activations = Input_Vector × Input_Hidden_Matrix
+Hidden_Output = ReLU(Hidden_Activations)
+Final_Output = Sigmoid(Hidden_Output × Hidden_Output_Matrix)
+```
+
+### Detailed Example
+
+Let's walk through a concrete example with sample values:
+
+**Input Features** (normalized between 0-1):
+```
+Bird Y Position:     0.5
+Bird Velocity:       0.2
+Distance to Gap:     0.8
+Gap Center Y:        0.6
+Height Difference:   0.1
+Frames Since Flap:   0.3
+```
+
+**Input Vector** (1×6):
+```
+[0.5, 0.2, 0.8, 0.6, 0.1, 0.3]
+```
+
+**Sample Input-Hidden Weights** (6×12 matrix, showing first 3 columns):
+```
+┌                     ┐
+│ 0.12  -0.45  0.78  │
+│ 0.34   0.67 -0.23  │
+│-0.56   0.89  0.12  │
+│ 0.45  -0.34  0.56  │
+│ 0.78   0.23 -0.67  │
+│-0.12   0.45  0.89  │
+└                     ┘
+```
+
+**Hidden Layer Calculation** (first 3 neurons):
+```
+Hidden[0] = (0.5×0.12) + (0.2×0.34) + (0.8×-0.56) + (0.6×0.45) + (0.1×0.78) + (0.3×-0.12) = 0.23
+Hidden[1] = (0.5×-0.45) + (0.2×0.67) + (0.8×0.89) + (0.6×-0.34) + (0.1×0.23) + (0.3×0.45) = 0.67
+Hidden[2] = (0.5×0.78) + (0.2×-0.23) + (0.8×0.12) + (0.6×0.56) + (0.1×-0.67) + (0.3×0.89) = 0.89
+```
+
+**After ReLU Activation** (negative values become 0):
+```
+Hidden_Output = [0.23, 0.67, 0.89, ...]  (12 values)
+```
+
+**Hidden-Output Weights** (12×1 matrix, sample values):
+```
+┌    ┐
+│ 0.45 │
+│-0.23 │
+│ 0.67 │
+│ 0.12 │
+│-0.78 │
+│ 0.34 │
+│ 0.56 │
+│-0.45 │
+│ 0.89 │
+│ 0.23 │
+│-0.67 │
+│ 0.12 │
+└    ┘
+```
+
+**Final Output Calculation**:
+```
+Raw_Output = Σ(Hidden_Output[i] × Hidden_Output_Weights[i]) = 0.76
+Flap_Decision = Sigmoid(0.76) = 0.68
+```
+
+**Decision**: Since 0.68 > 0.5, the bird decides to flap!
+
+This matrix system allows the AI to process complex relationships between game state variables and make intelligent decisions in real-time.
+
+### Genetic Evolution of Matrices
+
+Through generations, the genetic algorithm evolves these weight matrices:
+- **Crossover**: Combines weight matrices from parent birds
+- **Mutation**: Randomly adjusts matrix values
+- **Selection**: Preserves matrices from high-performing birds
+
 ### Genetic Algorithm Process
 1. **Population**: 150 birds per generation
 2. **Selection**: 70% tournament selection, 30% roulette wheel
