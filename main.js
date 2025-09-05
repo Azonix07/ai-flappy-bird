@@ -1,3 +1,4 @@
+// AI Flappy Bird - Version 2.2 - Cache busting fix
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
 
@@ -1604,41 +1605,45 @@ class Game {
 
         this.population.birds.forEach(bird => {
             if (bird.brain && bird.hiddenActivations) {
-                // Use the same inputs as the think method
-                let inputs = [0.5, 0, 1.0, 0.5, 0.0, 0]; // Default inputs
-                
-                // Try to get real inputs if available
-                if (this.pipes.length > 0) {
-                    let closest = null;
-                    let closestD = Infinity;
-                    for (let pipe of this.pipes) {
-                        let d = pipe.x + PIPE_WIDTH - bird.x;
-                        if (d > -PIPE_WIDTH && d < closestD) {
-                            closest = pipe;
-                            closestD = d;
+                try {
+                    // Use the same inputs as the think method
+                    let inputs = [0.5, 0, 1.0, 0.5, 0.0, 0]; // Default inputs
+                    
+                    // Try to get real inputs if available
+                    if (this.pipes.length > 0) {
+                        let closest = null;
+                        let closestD = Infinity;
+                        for (let pipe of this.pipes) {
+                            let d = pipe.x + PIPE_WIDTH - bird.x;
+                            if (d > -PIPE_WIDTH && d < closestD) {
+                                closest = pipe;
+                                closestD = d;
+                            }
+                        }
+                        
+                        if (closest) {
+                            let distanceToGap = closest.x + PIPE_WIDTH - bird.x;
+                            let gapCenter = (closest.top + closest.bottom) / 2;
+                            let heightDiff = bird.y - gapCenter;
+                            
+                            inputs = [
+                                bird.y / HEIGHT,
+                                bird.velocity / 20,
+                                distanceToGap / WIDTH,
+                                gapCenter / HEIGHT,
+                                heightDiff / HEIGHT,
+                                bird.framesSinceFlap / 60
+                            ];
                         }
                     }
                     
-                    if (closest) {
-                        let distanceToGap = closest.x + PIPE_WIDTH - bird.x;
-                        let gapCenter = (closest.top + closest.bottom) / 2;
-                        let heightDiff = bird.y - gapCenter;
-                        
-                        inputs = [
-                            bird.y / HEIGHT,
-                            bird.velocity / 20,
-                            distanceToGap / WIDTH,
-                            gapCenter / HEIGHT,
-                            heightDiff / HEIGHT,
-                            bird.framesSinceFlap / 60
-                        ];
-                    }
+                    const result = bird.brain.feedforward(inputs);
+                    const confidence = Math.abs(result.output[0][0] - 0.5) * 2; // Decision strength (0-1)
+                    totalConfidence += confidence;
+                    birdCount++;
+                } catch (error) {
+                    console.warn('⚠️ Error calculating confidence for bird:', error);
                 }
-                
-                const result = bird.brain.feedforward(inputs);
-                const confidence = Math.abs(result.output[0][0] - 0.5) * 2; // Decision strength (0-1)
-                totalConfidence += confidence;
-                birdCount++;
             }
         });
 
